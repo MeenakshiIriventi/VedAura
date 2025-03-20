@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ved Aura - AI Healthcare</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>Ved Aura - AI Healthcare</h1>
+
+    <!-- Symptom Input -->
+    <div class="container">
+        <h2>Get Treatment Suggestions</h2>
+        <input type="text" id="symptomInput" placeholder="Enter a symptom (e.g., fever)">
+        <button onclick="getTreatment()">Get Treatment</button>
+        <div id="treatmentResult"></div>
+    </div>
+
+    <!-- Image Upload for Herb/Medicine Recognition -->
+    <div class="container">
+        <h2>Scan Medicine / Herb</h2>
+        <input type="file" id="imageUpload">
+        <button onclick="uploadImage()">Scan Image</button>
+        <div id="scanResult"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
