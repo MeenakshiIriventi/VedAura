@@ -1,3 +1,4 @@
+A Mock AI model
 Ved Aura - AI-Powered Healthcare Assistant
 Ved Aura is an AI-driven healthcare assistant providing treatment suggestions in Allopathy, Ayurveda, and Homeopathy using natural remedies and modern medicine. It also features image-based medication recognition and a user-friendly interface for easy access to medical guidance.
 
