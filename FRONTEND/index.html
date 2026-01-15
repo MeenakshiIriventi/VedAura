@@ -1,30 +1,87 @@
 <!DOCTYPE html>
 <html lang="en">
+
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ved Aura - AI Healthcare</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
-<body>
-    <h1>Ved Aura - AI Healthcare</h1>
 
-    <!-- Symptom Input -->
-    <div class="container">
-        <h2>Get Treatment Suggestions</h2>
-        <input type="text" id="symptomInput" placeholder="Enter a symptom (e.g., fever)">
-        <button onclick="getTreatment()">Get Treatment</button>
-        <div id="treatmentResult"></div>
+<body>
+
+    <div id="loaderOverlay" style="display: none;">
+        <div class="spinner"></div>
+        <p>Ved Aura AI is analyzing...</p>
     </div>
 
-    <!-- Image Upload for Herb/Medicine Recognition -->
-    <div class="container">
-        <h2>Scan Medicine / Herb</h2>
-        <input type="file" id="imageUpload">
-        <button onclick="uploadImage()">Scan Image</button>
-        <div id="scanResult"></div>
+    <header>
+        <h1>Ved Aura - AI Healthcare</h1>
+        <p>AI-Powered Treatment Suggestions & Herb Recognition</p>
+    </header>
+
+    <div id="authContainer" class="container">
+        <h2 id="authTitle">Login to Ved Aura</h2>
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="handleAuth()">Submit</button>
+        <p onclick="toggleAuthMode()" style="cursor:pointer; color:blue;">New here? Register</p>
+    </div>
+
+    <div id="mainPortal" class="hidden">
+        <main>
+            <section class="container">
+                <h2>Get Treatment Suggestions</h2>
+                <div class="input-group">
+                    <input type="text" id="symptomInput" placeholder="Enter a symptom (e.g., persistent cough)">
+                    <button onclick="getTreatment()">Get Treatment</button>
+                </div>
+                <div id="treatmentResult" class="results-grid"></div>
+            </section>
+
+            <section class="container">
+                <h2>Scan Medicine / Herb</h2>
+                <div class="drop-zone" onclick="document.getElementById('imageUpload').click()">
+                    <input type="file" id="imageUpload" accept="image/*" hidden onchange="previewImage(event)">
+                    <p id="uploadText">Click to Upload or Drag Herb Image Here</p>
+                    <img id="imagePreview" class="hidden" alt="Preview">
+                </div>
+                <button class="btn-primary" onclick="uploadImage()">Scan Image</button>
+                <div id="scanResult"></div>
+            </section>
+
+            <div class="action-bar">
+                <button id="downloadBtn" class="hidden btn-secondary" onclick="generateReport()">Download Health
+                    Report</button>
+            </div>
+            <div class="dashboard-wrapper">
+                <nav class="sidebar">
+                    <div class="profile-section">
+                        <div class="avatar">VA</div>
+                        <p id="userDisplayName">Guest</p>
+                    </div>
+                    <ul>
+                        <li class="active" onclick="showSection('consult')">🩺 AI Consultation</li>
+                        <li onclick="showSection('history')">📜 Medical History</li>
+                        <li onclick="logout()">🚪 Logout</li>
+                    </ul>
+                </nav>
+
+                <main class="content-area">
+                    <div id="consultSection">
+                    </div>
+                    <div id="historySection" class="hidden">
+                        <h2>Your Health Records</h2>
+                        <div id="pastResults">AI will list your previous scans here...</div>
+                    </div>
+                </main>
+            </div>
+        </main>
     </div>
 
     <script src="script.js"></script>
 </body>
+
 </html>

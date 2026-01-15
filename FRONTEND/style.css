@@ -1,3 +1,4 @@
+/* 1. Global Styles */
 body {
     font-family: Arial, sans-serif;
     text-align: center;
@@ -11,29 +12,135 @@ h1 {
     margin-top: 20px;
 }
 
+/* 2. Layout Containers */
 .container {
     background: #ffffff;
-    width: 50%;
+    width: 90%;
+    max-width: 600px;
     margin: 20px auto;
     padding: 20px;
     border-radius: 10px;
     box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-input, button {
+/* 3. Inputs and Buttons */
+input[type="text"], input[type="file"], input[type="password"] {
+    width: 80%;
     padding: 10px;
-    margin: 10px;
+    margin: 10px auto;
     border-radius: 5px;
     border: 1px solid #ccc;
+    display: block;
 }
 
 button {
+    padding: 10px 25px;
+    margin: 10px;
+    border-radius: 5px;
     background: #ff6200;
     color: white;
     cursor: pointer;
     border: none;
+    font-weight: bold;
+    transition: background 0.3s, transform 0.1s;
 }
 
 button:hover {
     background: #ff4500;
+}
+
+/* 4. Full-screen Loading Overlay */
+#loaderOverlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(255,255,255,0.9);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #2D6A4F;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 5. Result Cards (Glassmorphism) */
+.result-card {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 25px;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.result-card:hover {
+    transform: scale(1.02);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* --- INTEGRATED DASHBOARD & LAYOUT STYLES --- */
+
+.dashboard-wrapper {
+    display: flex; /* This is the key to side-by-side layout */
+    min-height: 100vh;
+    align-items: stretch;
+}
+
+.sidebar {
+    width: 250px;
+    background: #1B4332;
+    color: white;
+    padding: 20px;
+    flex-shrink: 0; /* Prevents the sidebar from getting squashed */
+    text-align: left;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+}
+
+.content-area {
+    flex-grow: 1; /* Makes the main content take up the remaining space */
+    padding: 40px;
+    background: #f8fafc;
+    overflow-y: auto;
+}
+
+/* Add this to ensure the profile section inside the sidebar looks good */
+.profile-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.avatar {
+    width: 50px;
+    height: 50px;
+    background: #2D6A4F;
+    border-radius: 50%;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
 }

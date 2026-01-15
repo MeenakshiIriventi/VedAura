@@ -1,63 +1,127 @@
-from fastapi import FastAPI, UploadFile, File
-from fastapi.middleware.cors import CORSMiddleware  # Import CORS Middleware
-from pydantic import BaseModel
-import random
+import os
 import io
+import json
+import motor.motor_asyncio 
+from pydantic import BaseModel, Field
+from bson import ObjectId
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from passlib.context import CryptContext
 from PIL import Image
-import numpy as np
+from google import genai
+
+# 1. Connection String
+# Replace <username> and <password> with your Atlas credentials
+MONGO_DETAILS = "mongodb+srv://<username>:<password>@cluster0.abc.mongodb.net/"
+
+client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_DETAILS)
+database = client.ved_aura
+user_collection = database.get_collection("users")
+
+# 2. Custom Helper for MongoDB IDs
+# MongoDB uses ObjectIds, but FastAPI works best with strings
+class PyObjectId(ObjectId):
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v):
+        if not ObjectId.is_valid(v):
+            raise ValueError("Invalid objectid")
+        return ObjectId(v)
 
 app = FastAPI()
 
-# ✅ Allow frontend (port 5500) to access backend (port 8000)
+# Security configurations
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+# Mock User Database
+users_db = {}
+
+# Enable CORS so your frontend at :5500 can talk to :8000
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Change "*" to ["http://127.0.0.1:5500"] for better security
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-@app.get("/")
-def home():
-    return {"message": "Ved Aura API is running!"}
+# Configuration using the latest SDK
+GEMINI_API_KEY = "AIzaSyCSafeTmXmJJ9dxdTwIwcahgbEoAHJ0GTA" 
+client = genai.Client(api_key="AIzaSyCSafeTmXmJJ9dxdTwIwcahgbEoAHJ0GTA")
 
-# Sample treatment database
-TREATMENT_DATABASE = {
-    "fever": {
-        "Allopathy": {"medicine": "Paracetamol", "healing_time": "1-2 days", "side_effects": "Mild nausea"},
-        "Ayurveda": {"medicine": "Tulsi + Ginger Tea", "healing_time": "2-3 days", "side_effects": "None"},
-        "Homeopathy": {"medicine": "Aconite 30C", "healing_time": "2-4 days", "side_effects": "Rare headache"}
-    },
-    "cough": {
-        "Allopathy": {"medicine": "Cough Syrup", "healing_time": "2-3 days", "side_effects": "Drowsiness"},
-        "Ayurveda": {"medicine": "Honey + Turmeric", "healing_time": "3-5 days", "side_effects": "None"},
-        "Homeopathy": {"medicine": "Drosera 30C", "healing_time": "3-6 days", "side_effects": "Rare allergy"}
-    }
-}
+# Use 'gemini-2.0-flash' or 'gemini-1.5-flash'
+MODEL_ID = "gemini-2.0-flash"
 
 class SymptomInput(BaseModel):
     symptom: str
 
+# --- Security Helper Functions ---
+
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
+# --- Endpoints ---
+
+@app.get("/")
+def home():
+    return {"message": "Ved Aura AI Backend is running successfully!"}
+
+# Use this to register users so the get_treatment function works
+@app.post("/register/")
+async def register(username: str, age: int, history: str):
+    user_data = {
+        "username": username,
+        "age": age,
+        "history": history
+    }
+    result = await user_collection.insert_one(user_data)
+    return {"message": "User saved", "id": str(result.inserted_id)}
+
+@app.post("/token")
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    # Add logic to verify password and return a JWT token
+    return {"access_token": form_data.username, "token_type": "bearer"}
+
 @app.post("/get_treatment/")
 async def get_treatment(data: SymptomInput):
-    symptom = data.symptom.lower()
-    if symptom in TREATMENT_DATABASE:
-        return {"Treatment Options": TREATMENT_DATABASE[symptom]}
-    else:
-        return {"message": "No data available for this symptom"}
+    try:
+        prompt = (
+            f"Provide medical suggestions for: {data.symptom}. "
+            "Return ONLY a JSON object with keys: 'Allopathy', 'Ayurveda', 'Homeopathy'. "
+            "Each must have 'medicine', 'healing_time', and 'side_effects'."
+        )
+        
+        # New SDK Syntax
+        response = client.models.generate_content(
+            model=MODEL_ID,
+            contents=prompt
+        )
+        
+        json_text = response.text.replace("```json", "").replace("```", "").strip()
+        return json.loads(json_text)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-# Image processing endpoint
 @app.post("/scan_image/")
 async def scan_image(file: UploadFile = File(...)):
-    contents = await file.read()
-    image = Image.open(io.BytesIO(contents))
-    image = np.array(image)
-
-    detected_items = ["Aloe Vera", "Ginger", "Paracetamol"]
-    identified = random.choice(detected_items)
-
-    return {
-        "Detected Item": identified,
-        "Healing Properties": f"Useful for {random.choice(['inflammation', 'pain relief', 'immunity boost'])}",
-        "Side Effects": "Minimal"
-    }
+    try:
+        img_content = await file.read()
+        img = Image.open(io.BytesIO(img_content))
+        
+        prompt = "Identify this herb/medicine. Return JSON: {'Detected Item', 'Healing Properties', 'Side Effects'}"
+        
+        # New SDK Syntax for Multimodal
+        response = client.models.generate_content(
+            model=MODEL_ID,
+            contents=[prompt, img]
+        )
+        
+        json_text = response.text.replace("```json", "").replace("```", "").strip()
+        return json.loads(json_text)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
